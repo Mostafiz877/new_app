@@ -78,9 +78,19 @@ class _HomePageState extends State<HomePage> {
     return valueToBack;
   }
 
+  // Future<dynamic> setInitialUserData(phone) async {
+  //   var value = await databaseReference
+  //       .child("data")
+  //       .child(phone)
+  //       .set({'name': "", 'bkash': "", 'transactionId': "", 'status': "0"});
+
+  //   return value;
+  // }
+
   Future<dynamic> getAllInfomation() async {
     var chapters = await readChapersData();
     var phone = await currentUserPhoneNumber();
+    // await setInitialUserData(phone);
     var userStatus = await readUserData(phone);
     var noti = await readNotificationsData();
 

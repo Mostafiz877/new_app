@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/wid.dart';
 
 class TransactionScreen extends StatefulWidget {
   static const routeName = '/transaction';
@@ -11,9 +10,10 @@ class TransactionScreen extends StatefulWidget {
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
-  var userInfo;
-  bool _progressController = true;
   bool isSetText = true;
+  var userInfo;
+  var thisUserPhoneNUmber;
+  bool _progressController = true;
   final databaseReference = FirebaseDatabase.instance.reference();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   FirebaseUser firebaseUser;
@@ -57,19 +57,42 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Future<dynamic> getThisUserInfo() async {
     final phoneNumber = await currentUserPhoneNumber();
     final userInfoList = await readUserData(phoneNumber);
-    return userInfoList;
+    return [userInfoList, phoneNumber];
+  }
+
+  void setUserData(name, phone, bkash, transactionId) {
+    databaseReference.child("data").child(phone).set({
+      'name': name,
+      'bkash': bkash,
+      'transactionId': transactionId,
+      'status': "0"
+    }).then((_) {
+      Navigator.of(context).pushReplacementNamed('/transaction');
+    });
+  }
+
+  void updateData(name, phone, bkash, transactionId, status) {
+    databaseReference.child('data').child(phone).update({
+      'name': name,
+      'bkash': bkash,
+      'transactionId': transactionId,
+      'status': status
+    }).then((value) {
+      Navigator.of(context).pushReplacementNamed('/transaction');
+    });
   }
 
   void _saveFormForSet() {
-    _form.currentState.validate();
-    _form.currentState.save();
-
-    print(name);
-    print(bkashPhoneNumber);
-    print(transactionId);
+    if (_form.currentState.validate()) {
+      _form.currentState.save();
+      Navigator.of(context).pop();
+      if (name != "" && bkashPhoneNumber != "" && transactionId != "") {
+        setUserData(name, thisUserPhoneNUmber, bkashPhoneNumber, transactionId);
+      }
+    }
   }
 
-  void formWidget() {
+  void formWidgetForSet() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -137,13 +160,113 @@ class _TransactionScreenState extends State<TransactionScreen> {
           actions: <Widget>[
             FlatButton(
               color: Colors.blue,
-              onPressed: isSetText
-                  ? () {
-                      _saveFormForSet();
-                    }
-                  : null,
+              onPressed: () {
+                _saveFormForSet();
+              },
               child: Text(
                 "Set",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _saveFormForEdit() {
+    if (_form.currentState.validate()) {
+      _form.currentState.save();
+      Navigator.of(context).pop();
+      if (name != "" && bkashPhoneNumber != "" && transactionId != "") {
+        updateData(name, thisUserPhoneNUmber, bkashPhoneNumber, transactionId,
+            userInfo['status']);
+      }
+    }
+  }
+
+  void formWidgetForEdit(nameParam, bKashParam, transactionIdParam) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          content: Form(
+            key: _form,
+            child: Scrollbar(
+              child: ListView(
+                children: <Widget>[
+                  TextFormField(
+                    initialValue: nameParam,
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "Please provide name";
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(labelText: 'Name'),
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_bkashFocusNode);
+                    },
+                    onSaved: (value) {
+                      name = value;
+                    },
+                  ),
+                  TextFormField(
+                    initialValue: bKashParam,
+                    validator: (value) {
+                      if (value.length != 11) {
+                        return "Please provide 11 digit bKash number";
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(labelText: 'bKash Number'),
+                    textInputAction: TextInputAction.next,
+                    keyboardType: TextInputType.number,
+                    focusNode: _bkashFocusNode,
+                    onSaved: (value) {
+                      bkashPhoneNumber = value;
+                    },
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context)
+                          .requestFocus(_transactionIdFocusNode);
+                    },
+                  ),
+                  TextFormField(
+                    initialValue: transactionIdParam,
+                    validator: (value) {
+                      if (value.isEmpty) {
+                        return "Please provide transaction Id";
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(labelText: 'Transaction Id'),
+                    textInputAction: TextInputAction.done,
+                    focusNode: _transactionIdFocusNode,
+                    onSaved: (value) {
+                      transactionId = value;
+                    },
+                    onEditingComplete: _saveFormForSet,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              color: Colors.blue,
+              onPressed: () {
+                _saveFormForEdit();
+              },
+              child: Text(
+                "Save",
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -163,12 +286,15 @@ class _TransactionScreenState extends State<TransactionScreen> {
   void didChangeDependencies() {
     getThisUserInfo().then((value) {
       setState(() {
-        userInfo = value;
+        userInfo = value[0];
+        if (userInfo == null) {
+          userInfo = {"name": "", "baksh": "", "transactionId": ""};
+        }
+        thisUserPhoneNUmber = value[1];
         _progressController = false;
       });
     });
 
-    // TODO: implement didChangeDependencies
     super.didChangeDependencies();
   }
 
@@ -253,7 +379,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 ? RaisedButton(
                                     color: Colors.blue,
                                     onPressed: () {
-                                      formWidget();
+                                      formWidgetForSet();
                                     },
                                     child: Text(
                                       "Set",
@@ -263,7 +389,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 : RaisedButton(
                                     color: Colors.blue,
                                     onPressed: () {
-                                      formWidget();
+                                      formWidgetForEdit(
+                                        userInfo['name'],
+                                        userInfo['bkash'],
+                                        userInfo['transactionId'],
+                                      );
                                     },
                                     child: Text(
                                       "Edit",
@@ -275,81 +405,45 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       ],
                     ),
                   ),
-                )
+                ),
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 10),
+                  child: Center(
+                      child: Text("Rules", style: TextStyle(fontSize: 23))),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: CircleAvatar(child: Text("#1")),
+                    title: Text("At first you have to send 199 taka"),
+                  ),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: CircleAvatar(child: Text("#2")),
+                    title: Text("At first you have to send 199 taka"),
+                  ),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: CircleAvatar(child: Text("#3")),
+                    title: Text("At first you have to send 199 taka"),
+                  ),
+                ),
+                SizedBox(height: 20),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text("Still Confusion??"),
+                      SizedBox(width: 7),
+                      RaisedButton(
+                        onPressed: () {},
+                        child: Text(
+                          "See Video",
+                        ),
+                      ),
+                    ])
               ],
             ),
     );
   }
 }
-
-// class TransactionScreen extends StatefulWidget {
-//   static const routeName = '/transaction';
-
-//   @override
-//   _TransactionScreenState createState() => _TransactionScreenState();
-// }
-
-// class _TransactionScreenState extends State<TransactionScreen> {
-//   var UserInformation;
-//   var UserPhoneNumber;
-//   final databaseReference = FirebaseDatabase.instance.reference();
-//   final FirebaseAuth _auth = FirebaseAuth.instance;
-//   FirebaseUser firebaseUser;
-
-//   Future<List> readChapersData() async {
-//     var videolists;
-//     var valueToBack = await databaseReference
-//         .child("data")
-//         .child("chapters")
-//         .once()
-//         .then((DataSnapshot snapshot) {
-//       List<dynamic> extractedData = snapshot.value;
-//       videolists = extractedData;
-//       return videolists;
-
-//       // allVideoList = extractedData;
-//     });
-//     return valueToBack;
-//   }
-
-//   Future<FirebaseUser> isAlreadyAuthenticated() async {
-//     firebaseUser = await _auth.currentUser();
-//     setState(() {
-//       UserInformation = firebaseUser.phoneNumber;
-//     });
-
-//     print(firebaseUser.phoneNumber + "inside Is authenticated");
-//     return firebaseUser;
-//     // if (firebaseUser != null) {
-//     //   return true;
-//     // } else {
-//     //   return false;
-//     // }
-//   }
-
-//   @override
-//   void didChangeDependencies() {
-//     // printValue();
-//     kk();
-//     printValue();
-
-//     super.didChangeDependencies();
-//   }
-
-//   void kk() async {
-//     var p = await isAlreadyAuthenticated();
-//   }
-
-//   void printValue() {
-//     print(this.UserPhoneNumber);
-//     print("from printValue function");
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(),
-//       body:
-//     );
-//   }
-// }
