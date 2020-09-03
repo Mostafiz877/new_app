@@ -47,112 +47,120 @@ class _PlayvideoScreenState extends State<PlayvideoScreen> {
     final index = indexAndvideolist[0];
     final videoList = indexAndvideolist[1];
     final videoLink = videoList[index]['link'];
+    final satckOfVideo = Stack(
+      children: <Widget>[
+        WebView(
+          key: _key,
+          onPageFinished: (finish) {
+            setState(() {
+              isLoading = false;
+            });
+          },
+          initialUrl: Uri.dataFromString('<html><body>$videoLink</body></html>',
+                  mimeType: 'text/html')
+              .toString(),
+          javascriptMode: JavascriptMode.unrestricted,
+        ),
+        isLoading
+            ? Center(
+                child: CircularProgressIndicator(),
+              )
+            : Stack(),
+      ],
+    );
+    final appBar = PreferredSize(
+      preferredSize:
+          islandscape ? Size.fromHeight(35.0) : Size.fromHeight(50.0),
+      child: AppBar(
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.skip_previous,
+                color: (index - 1) >= 0 ? Colors.white : Colors.blueGrey),
+            onPressed: (index - 1) >= 0
+                ? () {
+                    Navigator.of(context).pushReplacementNamed(
+                        PlayvideoScreen.routeName,
+                        arguments: [
+                          index - 1,
+                          videoList,
+                        ]);
+                    // do something
+                  }
+                : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.skip_next,
+              color: (index + 1) < videoList.length
+                  ? Colors.white
+                  : Colors.blueGrey,
+            ),
+            onPressed: index + 1 < videoList.length
+                ? () {
+                    Navigator.of(context).pushReplacementNamed(
+                        PlayvideoScreen.routeName,
+                        arguments: [
+                          index + 1,
+                          videoList,
+                        ]);
+
+                    // do something
+                  }
+                : null,
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.list,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              listInModal(context, videoList, index);
+
+              // do something
+            },
+          ),
+          islandscape
+              ? IconButton(
+                  icon: Icon(
+                    Icons.fullscreen_exit,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    SystemChrome.setPreferredOrientations(
+                        [DeviceOrientation.portraitUp]);
+                  },
+                )
+              : IconButton(
+                  icon: Icon(
+                    Icons.fullscreen,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    SystemChrome.setPreferredOrientations(
+                        [DeviceOrientation.landscapeLeft]);
+                  },
+                ),
+        ],
+      ),
+    );
+
+    var deviceHeight = (MediaQuery.of(context).size.height -
+            appBar.preferredSize.height -
+            MediaQuery.of(context).padding.top) *
+        1;
 
     var deviceWidth = islandscape
-        ? MediaQuery.of(context).size.width * 0.83
+        ? deviceHeight * 1.72
         : MediaQuery.of(context).size.width * 1;
 
     return Scaffold(
-      appBar: PreferredSize(
-          preferredSize:
-              islandscape ? Size.fromHeight(35.0) : Size.fromHeight(50.0),
-          // here the desired height
-          child: AppBar(
-            actions: <Widget>[
-              IconButton(
-                icon: Icon(Icons.skip_previous,
-                    color: (index - 1) >= 0 ? Colors.white : Colors.blueGrey),
-                onPressed: (index - 1) >= 0
-                    ? () {
-                        Navigator.of(context).pushReplacementNamed(
-                            PlayvideoScreen.routeName,
-                            arguments: [
-                              index - 1,
-                              videoList,
-                            ]);
-                        // do something
-                      }
-                    : null,
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.skip_next,
-                  color: (index + 1) < videoList.length
-                      ? Colors.white
-                      : Colors.blueGrey,
-                ),
-                onPressed: index + 1 < videoList.length
-                    ? () {
-                        Navigator.of(context).pushReplacementNamed(
-                            PlayvideoScreen.routeName,
-                            arguments: [
-                              index + 1,
-                              videoList,
-                            ]);
-
-                        // do something
-                      }
-                    : null,
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.list,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  listInModal(context, videoList, index);
-
-                  // do something
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.fullscreen_exit,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  SystemChrome.setPreferredOrientations(
-                      [DeviceOrientation.portraitUp]);
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                ),
-                onPressed: () {
-                  SystemChrome.setPreferredOrientations(
-                      [DeviceOrientation.landscapeLeft]);
-                },
-              ),
-            ],
-          )),
+      appBar: appBar,
       body: isInternetConnetion
           ? Center(
               child: Container(
                 width: deviceWidth,
-                child: Stack(
-                  children: <Widget>[
-                    WebView(
-                      key: _key,
-                      onPageFinished: (finish) {
-                        setState(() {
-                          isLoading = false;
-                        });
-                      },
-                      initialUrl: Uri.dataFromString(
-                              '<html><body>$videoLink</body></html>',
-                              mimeType: 'text/html')
-                          .toString(),
-                      javascriptMode: JavascriptMode.unrestricted,
-                    ),
-                    isLoading
-                        ? Center(
-                            child: CircularProgressIndicator(),
-                          )
-                        : Stack(),
-                  ],
-                ),
+                // height: deviceHeight,
+                child: satckOfVideo,
               ),
             )
           : Center(
