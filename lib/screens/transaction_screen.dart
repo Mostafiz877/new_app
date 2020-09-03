@@ -288,7 +288,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
       setState(() {
         userInfo = value[0];
         if (userInfo == null) {
-          userInfo = {"name": "", "baksh": "", "transactionId": ""};
+          userInfo = {"name": "", "bkash": "", "transactionId": ""};
         }
         thisUserPhoneNUmber = value[1];
         _progressController = false;

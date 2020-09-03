@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import './pages/splash_page.dart';
 import './stores/login_store.dart';
+import './pages/otp_page.dart';
 
 void main() => runApp(App());
 
@@ -31,6 +32,7 @@ class _AppState extends State<App> {
           PlaylistScreen.routeName: (ctx) => PlaylistScreen(),
           PlayvideoScreen.routeName: (ctx) => PlayvideoScreen(),
           TransactionScreen.routeName: (ctx) => TransactionScreen(),
+          OtpPage.routeName: (ctx) => OtpPage(),
         },
       ),
     );

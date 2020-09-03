@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import '../stores/login_store.dart';
 import '../theme.dart';
 import '../widgets/loader_hud.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 
 class OtpPage extends StatefulWidget {
+  static const routeName = '/otpPage';
   const OtpPage({Key key}) : super(key: key);
   @override
   _OtpPageState createState() => _OtpPageState();
@@ -14,6 +16,7 @@ class OtpPage extends StatefulWidget {
 
 class _OtpPageState extends State<OtpPage> {
   String text = '';
+  bool _isLoadingSentOtp = false;
 
   void _onKeyboardTap(String value) {
     setState(() {
@@ -48,6 +51,8 @@ class _OtpPageState extends State<OtpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final phoneNumber = ModalRoute.of(context).settings.arguments;
+
     return Consumer<LoginStore>(
       builder: (_, loginStore, __) {
         return Observer(
@@ -77,15 +82,13 @@ class _OtpPageState extends State<OtpPage> {
                 brightness: Brightness.light,
               ),
               body: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                child: ListView(
                   children: <Widget>[
-                    Expanded(
+                    Container(
                       child: Column(
                         mainAxisSize: MainAxisSize.max,
                         children: <Widget>[
-                          Expanded(
+                          Container(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
@@ -96,9 +99,10 @@ class _OtpPageState extends State<OtpPage> {
                                         'Enter 6 digits verification code sent to your number',
                                         style: TextStyle(
                                             color: Colors.black,
-                                            fontSize: 20,
+                                            fontSize: 17,
                                             fontWeight: FontWeight.w500))),
                                 Container(
+                                  margin: EdgeInsets.symmetric(vertical: 20),
                                   constraints:
                                       const BoxConstraints(maxWidth: 500),
                                   child: Row(
@@ -119,81 +123,117 @@ class _OtpPageState extends State<OtpPage> {
                               ],
                             ),
                           ),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: <Widget>[
-                                  Container(
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 10),
-                                    constraints:
-                                        const BoxConstraints(maxWidth: 500),
-                                    child: RaisedButton(
-                                      onPressed: () {
-                                        loginStore.validateOtpAndLogin(
-                                            context, text);
-                                      },
-                                      color: MyColors.primaryColor,
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.all(
-                                              Radius.circular(14))),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8, horizontal: 8),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: <Widget>[
-                                            Text(
-                                              'Confirm',
-                                              style: TextStyle(
-                                                  color: Colors.white),
+                          Container(
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 10),
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 500),
+                                  child: RaisedButton(
+                                    onPressed: () {
+                                      loginStore.validateOtpAndLogin(
+                                          context, text);
+                                    },
+                                    color: MyColors.primaryColor,
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(14))),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8, horizontal: 8),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: <Widget>[
+                                          Text(
+                                            'Confirm',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  const BorderRadius.all(
+                                                      Radius.circular(20)),
+                                              color: MyColors.primaryColorLight,
                                             ),
-                                            Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                borderRadius:
-                                                    const BorderRadius.all(
-                                                        Radius.circular(20)),
-                                                color:
-                                                    MyColors.primaryColorLight,
-                                              ),
-                                              child: Icon(
-                                                Icons.arrow_forward_ios,
-                                                color: Colors.white,
-                                                size: 16,
-                                              ),
-                                            )
-                                          ],
-                                        ),
+                                            child: Icon(
+                                              Icons.arrow_forward_ios,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          )
+                                        ],
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                _isLoadingSentOtp
+                                    ? CircularProgressIndicator()
+                                    : ArgonTimerButton(
+                                        height: 50,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.45,
+                                        minWidth:
+                                            MediaQuery.of(context).size.width *
+                                                0.30,
+                                        highlightColor: Colors.transparent,
+                                        highlightElevation: 0,
+                                        roundLoadingShape: false,
+                                        splashColor: Colors.transparent,
+                                        onTap: (startTimer, btnState) {
+                                          if (btnState == ButtonState.Idle) {
+                                            startTimer(60);
+                                            loginStore
+                                                .resendGetCodeWithPhoneNumber(
+                                                    context, phoneNumber);
+                                          }
+                                        },
+                                        // initialTimer: 10,
+                                        child: Text(
+                                          "Resend OTP",
+                                          style: TextStyle(
+                                              color: Colors.blue,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700),
+                                        ),
+                                        loader: (timeLeft) {
+                                          return Text(
+                                            "Wait | $timeLeft",
+                                            style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w700),
+                                          );
+                                        },
+                                        borderRadius: 5.0,
+                                        color: Colors.transparent,
+                                        elevation: 0,
+                                      ),
+                              ],
                             ),
                           ),
-                          Expanded(
-                            flex: 2,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: <Widget>[
-                                  NumericKeyboard(
-                                    onKeyboardTap: _onKeyboardTap,
-                                    textColor: MyColors.primaryColorLight,
-                                    rightIcon: Icon(
-                                      Icons.backspace,
-                                      color: MyColors.primaryColorLight,
-                                    ),
-                                    rightButtonFn: () {
-                                      setState(() {
-                                        text =
-                                            text.substring(0, text.length - 1);
-                                      });
-                                    },
+                          Container(
+                            child: Column(
+                              children: <Widget>[
+                                NumericKeyboard(
+                                  onKeyboardTap: _onKeyboardTap,
+                                  textColor: MyColors.primaryColorLight,
+                                  rightIcon: Icon(
+                                    Icons.backspace,
+                                    color: MyColors.primaryColorLight,
                                   ),
-                                ],
-                              ),
+                                  rightButtonFn: () {
+                                    setState(() {
+                                      text = text.substring(0, text.length - 1);
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
                           )
                         ],

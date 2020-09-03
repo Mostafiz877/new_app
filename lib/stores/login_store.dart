@@ -12,6 +12,7 @@ class LoginStore = LoginStoreBase with _$LoginStore;
 abstract class LoginStoreBase with Store {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String actualCode;
+  int _rToken;
 
   @observable
   bool isLoginLoading = false;
@@ -85,8 +86,78 @@ abstract class LoginStoreBase with Store {
         codeSent: (String verificationId, [int forceResendingToken]) async {
           actualCode = verificationId;
           isLoginLoading = false;
+          // await Navigator.of(context)
+          //     .push(MaterialPageRoute(builder: (_) => const OtpPage()));
           await Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => const OtpPage()));
+              .pushNamed('/otpPage', arguments: phoneNumber);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          actualCode = verificationId;
+        });
+  }
+
+  @action
+  Future<void> resendGetCodeWithPhoneNumber(
+      BuildContext context, String phoneNumberinput) async {
+    isLoginLoading = true;
+
+    await _auth.verifyPhoneNumber(
+        forceResendingToken: _rToken,
+        phoneNumber: phoneNumberinput,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (AuthCredential auth) async {
+          await _auth.signInWithCredential(auth).then((AuthResult value) {
+            if (value != null && value.user != null) {
+              // print('Authentication successful');
+              onAuthenticationSuccessful(context, value);
+            } else {
+              otpScaffoldKey.currentState.showSnackBar(SnackBar(
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: Colors.red,
+                content: Text(
+                  'Invalid code/invalid authentication',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ));
+            }
+          }).catchError((error) {
+            otpScaffoldKey.currentState.showSnackBar(SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+              content: Text(
+                'Something has gone wrong, please try later',
+                style: TextStyle(color: Colors.white),
+              ),
+            ));
+          });
+        },
+        verificationFailed: (AuthException authException) {
+          print('Error message: ' + authException.message);
+          otpScaffoldKey.currentState.showSnackBar(SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Text(
+              'The phone number format is incorrect. Please enter your number in E.164 format. [+][country code][number]',
+              style: TextStyle(color: Colors.white),
+            ),
+          ));
+          isLoginLoading = false;
+        },
+        codeSent: (String verificationId, [int forceResendingToken]) async {
+          actualCode = verificationId;
+          _rToken = forceResendingToken;
+          isLoginLoading = false;
+          // await Navigator.of(context)
+          //     .push(MaterialPageRoute(builder: (_) => const OtpPage()));
+
+          otpScaffoldKey.currentState.showSnackBar(SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.blue,
+            content: Text(
+              'Code sent',
+              style: TextStyle(color: Colors.white),
+            ),
+          ));
         },
         codeAutoRetrievalTimeout: (String verificationId) {
           actualCode = verificationId;

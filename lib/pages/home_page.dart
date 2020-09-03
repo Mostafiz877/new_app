@@ -184,7 +184,7 @@ class _HomePageState extends State<HomePage> {
                   : IconButton(
                       icon: Icon(
                         Icons.notifications_active,
-                        color: Colors.yellow,
+                        color: Colors.white,
                       ),
                       onPressed: () {
                         _showDialog(notification);

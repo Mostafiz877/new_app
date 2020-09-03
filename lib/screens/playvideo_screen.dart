@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:io';
 
@@ -45,7 +46,6 @@ class _PlayvideoScreenState extends State<PlayvideoScreen> {
         ModalRoute.of(context).settings.arguments as List<dynamic>;
     final index = indexAndvideolist[0];
     final videoList = indexAndvideolist[1];
-    final videoTitle = videoList[index]['title'];
     final videoLink = videoList[index]['link'];
 
     var deviceWidth = islandscape
@@ -105,11 +105,27 @@ class _PlayvideoScreenState extends State<PlayvideoScreen> {
                   // do something
                 },
               ),
+              IconButton(
+                icon: Icon(
+                  Icons.fullscreen_exit,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  SystemChrome.setPreferredOrientations(
+                      [DeviceOrientation.portraitUp]);
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.fullscreen,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  SystemChrome.setPreferredOrientations(
+                      [DeviceOrientation.landscapeLeft]);
+                },
+              ),
             ],
-            title: Text(
-              videoTitle,
-              style: TextStyle(fontSize: 13.0),
-            ),
           )),
       body: isInternetConnetion
           ? Center(

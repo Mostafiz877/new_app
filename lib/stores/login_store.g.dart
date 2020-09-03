@@ -113,6 +113,16 @@ mixin _$LoginStore on LoginStoreBase, Store {
         .run(() => super.getCodeWithPhoneNumber(context, phoneNumber));
   }
 
+  final _$getCodeWithresendGetCodeWithPhoneNumber =
+      AsyncAction('resendGetCodeWithPhoneNumber');
+
+  @override
+  Future<void> resendGetCodeWithPhoneNumber(
+      BuildContext context, String phoneNumber) {
+    return _$getCodeWithresendGetCodeWithPhoneNumber
+        .run(() => super.resendGetCodeWithPhoneNumber(context, phoneNumber));
+  }
+
   final _$validateOtpAndLoginAsyncAction = AsyncAction('validateOtpAndLogin');
 
   @override
